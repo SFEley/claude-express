@@ -55,8 +55,8 @@ queue.append(text: str, *, cache: int | None = None)
 ```
 
 - `cache` accepts:
-  - `CACHE_SHORT` = `CACHE_5` = `5` — 5-minute TTL → wire `cache_control: {"type": "ephemeral"}`
-  - `CACHE_LONG` = `CACHE_60` = `60` — 1-hour TTL → wire `cache_control: {"type": "ephemeral", "ttl": "1h"}`
+  - `CACHE_SHORT` = `CACHE_5` = 5 — 5-minute TTL → wire `cache_control: {"type": "ephemeral"}` (5-min is Anthropic's default; no `ttl` field on the wire)
+  - `CACHE_LONG` = `CACHE_60` = 60 — 1-hour TTL → wire `cache_control: {"type": "ephemeral", "ttl": "1h"}`
   - `UNCACHED` = `CACHE_NONE` = `None`
 - Aliases are *value-identical*: `CACHE_SHORT is CACHE_5` is `True`. Do not use intermediate values; only the constants and `None` are valid.
 
