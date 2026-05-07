@@ -66,6 +66,10 @@ Anything not on this list is internal to the author's implementation and not exe
 Replace the contents of `pyproject.toml` with:
 
 ```toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "claude-express"
 version = "0.1.0"
@@ -80,13 +84,16 @@ dev = [
     "pytest-asyncio>=0.23",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/claude_express"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
 ```
 
-`pythonpath = ["src"]` lets pytest import `claude_express` without an editable install. `asyncio_mode = "auto"` means `async def test_*` functions are run automatically without needing `@pytest.mark.asyncio` on each.
+`hatchling` is the build backend — needed by the editable install in Step 4 and standard for src-layout libraries. `pythonpath = ["src"]` is a redundant safety net so pytest finds the package even without an active editable install. `asyncio_mode = "auto"` means `async def test_*` functions are run automatically without needing `@pytest.mark.asyncio` on each.
 
 - [ ] **Step 2: Create the empty package**
 
@@ -105,17 +112,17 @@ Create `tests/__init__.py` empty (zero bytes is fine).
 Run from the project root:
 
 ```bash
-uv venv && source .venv/bin/activate && uv pip install -e ".[dev]"
+uv venv && uv pip install -e ".[dev]"
 ```
 
-Expected: virtualenv created, pytest + pytest-asyncio installed.
+Expected: virtualenv created at `.venv/`, claude-express installed editable, pytest + pytest-asyncio installed.
 
-If the user prefers a different env tool (poetry, pipenv, plain pip), they can substitute. Auto mode default is uv.
+(`uv pip` automatically targets the project's `.venv/` if present — no `source activate` needed. All subsequent test commands use `uv run pytest`, which also auto-targets `.venv/`.)
 
 - [ ] **Step 5: Verify pytest runs**
 
 ```bash
-pytest -v
+uv run pytest -v
 ```
 
 Expected output: `no tests ran in 0.0Xs` (exit code 5: no tests collected). This confirms pytest is wired up.
@@ -195,7 +202,7 @@ def test_short_and_long_are_distinct():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_constants.py -v
+uv run pytest tests/test_constants.py -v
 ```
 
 Expected: collection error — `ImportError: cannot import name 'CACHE_5' from 'claude_express'` (or whichever import comes first). This is the success state for this task: the test file is correctly wired and waiting for the author's implementation.
@@ -449,7 +456,7 @@ def test_error_response_transport_status_zero():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_responses.py -v
+uv run pytest tests/test_responses.py -v
 ```
 
 Expected: `ImportError: cannot import name 'Response' from 'claude_express'` (or `ErrorResponse`, whichever the import line hits first).
@@ -582,7 +589,7 @@ def sample_error_raw() -> dict:
 - [ ] **Step 2: Run pytest to confirm conftest doesn't break collection**
 
 ```bash
-pytest -v
+uv run pytest -v
 ```
 
 Expected: same outcome as before (existing test files fail at import; conftest itself imports cleanly because everything inside `TYPE_CHECKING` is deferred and `StubDispatcher` doesn't reference `claude_express` symbols at import time).
@@ -734,7 +741,7 @@ def test_unknown_model_string_does_not_raise():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_construction.py -v
+uv run pytest tests/test_construction.py -v
 ```
 
 Expected: `ImportError: cannot import name 'Message' from 'claude_express'` (or `ValidationError`).
@@ -860,7 +867,7 @@ def test_blocks_setter_does_not_exist():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_scalars.py -v
+uv run pytest tests/test_scalars.py -v
 ```
 
 Expected: `ImportError: cannot import name 'Message' from 'claude_express'`.
@@ -1098,7 +1105,7 @@ def test_appending_uncached_to_system_does_not_affect_blocks():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_queues.py -v
+uv run pytest tests/test_queues.py -v
 ```
 
 Expected: `ImportError: cannot import name 'Message' from 'claude_express'` (or one of the constants).
@@ -1450,7 +1457,7 @@ def test_spec_section_6_1_worked_example():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_serialization.py -v
+uv run pytest tests/test_serialization.py -v
 ```
 
 Expected: `ImportError: cannot import name 'Message' from 'claude_express'` (or `SerializationError`).
@@ -1729,7 +1736,7 @@ async def test_send_per_call_can_re_enable_raising(stub_dispatcher):
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_send.py -v
+uv run pytest tests/test_send.py -v
 ```
 
 Expected: `ImportError: cannot import name 'Message' from 'claude_express'` (or one of the exception types). Once imports succeed, individual tests will fail with `AttributeError` until the implementation lands.
@@ -1932,7 +1939,7 @@ async def test_freeze_persists_through_propagated_exception():
 - [ ] **Step 2: Run pytest, verify expected failure**
 
 ```bash
-pytest tests/test_lifecycle.py -v
+uv run pytest tests/test_lifecycle.py -v
 ```
 
 Expected: `ImportError: cannot import name 'FrozenMessageError' from 'claude_express'`.
@@ -1940,7 +1947,7 @@ Expected: `ImportError: cannot import name 'FrozenMessageError' from 'claude_exp
 - [ ] **Step 3: Run the full test suite to confirm nothing was broken**
 
 ```bash
-pytest -v
+uv run pytest -v
 ```
 
 Expected: every test errors at collection time with `ImportError` (because `claude_express/__init__.py` is still empty). Total tests collected/erroring should match the sum of all test functions across the 8 test files. **No test should pass.**
