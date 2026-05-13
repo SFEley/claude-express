@@ -99,6 +99,19 @@ async def test_constructor_dispatcher_overrides_module_default(monkeypatch):
     assert default.calls == []
 
 
+async def test_send_with_no_dispatcher_raises(monkeypatch):
+    """Neither constructor-injected nor module-level dispatcher → DispatchError.
+
+    Surfaces a clear error message instead of failing deeper as an
+    AttributeError on None.
+    """
+    monkeypatch.setattr(express, "dispatcher", None, raising=False)
+    msg = Message()  # no dispatcher injected
+    msg.blocks.append("hi")
+    with pytest.raises(DispatchError):
+        await msg.send()
+
+
 # ---------------------------------------------------------------------------
 # Success path
 # ---------------------------------------------------------------------------

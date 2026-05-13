@@ -272,6 +272,19 @@ def test_payload_with_five_breakpoints_raises():
 
 
 # ---------------------------------------------------------------------------
+# Invalid cache TTL — only the constants and None are valid
+# ---------------------------------------------------------------------------
+
+def test_invalid_cache_ttl_raises_at_payload():
+    """Spec §2.3: only CACHE_SHORT (5), CACHE_LONG (60), and UNCACHED (None)
+    are valid cache values. An intermediate integer surfaces at payload time."""
+    msg = Message()
+    msg.system.append("a", cache=99)  # not a valid TTL constant
+    with pytest.raises(SerializationError):
+        msg.payload()
+
+
+# ---------------------------------------------------------------------------
 # Worked example from spec §6.1
 # ---------------------------------------------------------------------------
 
