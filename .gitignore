@@ -11,3 +11,4 @@ wheels/
 
 # Claude Code per-project state
 .claude/
+.DS_Store
